@@ -72,6 +72,19 @@ export function App() {
     }
   }
 
+  async function renderAll() {
+    if (!project) return;
+    setBusy(true);
+    try {
+      await api.renderAll(project.id);
+      await refresh(project.id);
+    } catch (exc) {
+      setError(exc instanceof Error ? exc.message : "批量渲染失败");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <main className="workspace">
       <header className="topbar">
@@ -145,7 +158,12 @@ export function App() {
           )}
 
           <section className="segments-panel">
-            <h2>候选片段</h2>
+            <div className="section-heading">
+              <h2>候选片段</h2>
+              <button className="primary" onClick={renderAll} disabled={busy || project.status !== "awaiting_review"}>
+                全部渲染
+              </button>
+            </div>
             <div className="segments-grid">
               {project.segments.map((segment) => (
                 <SegmentCard

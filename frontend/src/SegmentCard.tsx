@@ -57,6 +57,12 @@ export function SegmentCard({ project, segment, onChanged }: Props) {
       <small>
         {segment.start_ms / 1000} 秒 - {segment.end_ms / 1000} 秒
       </small>
+      <video
+        className="segment-preview"
+        src={`/api/projects/${project.id}/source#t=${segment.start_ms / 1000},${segment.end_ms / 1000}`}
+        controls
+        preload="metadata"
+      />
       {editing ? (
         <div className="edit-form">
           <label>

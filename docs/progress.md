@@ -19,3 +19,5 @@
 - Module gate: backend project-list tests and frontend tests/build passed; contract and progress docs updated.
 - M1: Hardened OpenAI-compatible provider with bounded transcript cues, retry/backoff for 408/429/5xx, transport error handling, and strict JSON extraction.
 - Module gate: provider tests passed, including mocked rate-limit retry.
+- M1: Added browser source preview per segment, a batch render endpoint, duplicate-render rejection through project state, and frontend batch action.
+- Module gate: batch-render API tests and frontend test/build passed.

@@ -33,4 +33,6 @@ export const api = {
     }),
   render: (projectId: string, segment: Segment) =>
     request<{ status: string }>(`/api/projects/${projectId}/segments/${segment.id}/render`, { method: "POST" }),
+  renderAll: (projectId: string) =>
+    request<{ status: string; count: number }>(`/api/projects/${projectId}/render`, { method: "POST" }),
 };

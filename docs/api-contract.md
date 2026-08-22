@@ -11,4 +11,6 @@ Current endpoints:
 - `GET /api/projects/{project_id}`
 - `PATCH /api/projects/{project_id}/segments/{segment_id}`
 - `POST /api/projects/{project_id}/segments/{segment_id}/render`
+- `POST /api/projects/{project_id}/render`
+- `GET /api/projects/{project_id}/source`
 - `GET /api/projects/{project_id}/segments/{segment_id}/download`

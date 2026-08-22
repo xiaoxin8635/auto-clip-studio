@@ -64,6 +64,15 @@ def project_detail(project_id: str):
         return project_to_out(project)
 
 
+@app.get("/api/projects/{project_id}/source")
+def project_source(project_id: str):
+    with session_scope() as session:
+        project = _get_project_or_404(session, project_id)
+        if not project.source_path:
+            raise HTTPException(status_code=409, detail="Project has no uploaded video")
+        return FileResponse(project.source_path, media_type="video/mp4")
+
+
 @app.post("/api/projects/{project_id}/upload")
 def upload_video(project_id: str, file: UploadFile = File(...)):
     settings = get_settings()
@@ -158,6 +167,22 @@ def render_segment(project_id: str, segment_id: str, background_tasks: Backgroun
             raise HTTPException(status_code=409, detail="Project cannot start rendering") from exc
     background_tasks.add_task(run_render, project_id, segment_id)
     return {"status": "rendering"}
+
+
+@app.post("/api/projects/{project_id}/render", status_code=202)
+def render_all_segments(project_id: str, background_tasks: BackgroundTasks):
+    with session_scope() as session:
+        project = _get_project_or_404(session, project_id)
+        if project.status != "awaiting_review" or not project.segments:
+            raise HTTPException(status_code=409, detail="Project must have review-ready segments")
+        segment_ids = [segment.id for segment in project.segments]
+        try:
+            advance(project, "rendering")
+        except InvalidTransitionError as exc:
+            raise HTTPException(status_code=409, detail="Project cannot start rendering") from exc
+    for segment_id in segment_ids:
+        background_tasks.add_task(run_render, project_id, segment_id)
+    return {"status": "rendering", "count": len(segment_ids)}
 
 
 @app.get("/api/projects/{project_id}/segments/{segment_id}/download")

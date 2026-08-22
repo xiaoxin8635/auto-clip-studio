@@ -30,6 +30,10 @@ Errors: `404`, `409`.
 
 Returns project status, transcript, and candidate segments. Poll this endpoint for progress.
 
+## GET /projects/{project_id}/source
+
+Streams the uploaded source video for browser preview. Requires an upload.
+
 ## PATCH /projects/{project_id}/segments/{segment_id}
 
 JSON body may include `title`, `start_ms`, and `end_ms`. End must be after start and within the source duration.
@@ -41,6 +45,12 @@ Errors: `404`, `409`, `422`.
 Starts FFmpeg rendering. Allowed once the project is awaiting review.
 
 Errors: `404`, `409`.
+
+## POST /projects/{project_id}/render
+
+Starts rendering all review-ready segments sequentially. Only allowed when the project is `awaiting_review`.
+
+Response: `{"status":"rendering","count":N}`
 
 ## GET /projects/{project_id}/segments/{segment_id}/download
 
