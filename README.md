@@ -57,17 +57,21 @@ AUTOCLIP_CAPTION_SUFFIX=.srt
 
 ```text
 AUTOCLIP_PROVIDER=qwen-asr-openai-compatible
-AUTOCLIP_QWEN_ASR_MODEL=qwen-audio-asr
-AUTOCLIP_MEDIA_UPLOAD_URL_TEMPLATE=https://your-storage.example/{name}?signature=...
+AUTOCLIP_QWEN_ASR_MODEL=paraformer-v2
+AUTOCLIP_ASR_API_KEY=your-dashscope-key
+AUTOCLIP_OSS_BUCKET=your-bucket
+AUTOCLIP_OSS_ENDPOINT=oss-cn-beijing.aliyuncs.com
+AUTOCLIP_OSS_ACCESS_KEY_ID=your-oss-key-id
+AUTOCLIP_OSS_ACCESS_KEY_SECRET=your-oss-key-secret
 AUTOCLIP_AI_BASE_URL=https://peuyai.ulib.top/v1
 AUTOCLIP_AI_API_KEY=your-key
 AUTOCLIP_AI_MODEL=glm-5.3
 ```
 
-千问 ASR 要求音频具有可下载 URL。上传模板必须支持 `PUT`，并把 `{name}` 替换为文件名；生产环境应由 OSS 签名服务生成短期 URL，后端只使用该 URL，不保存 OSS 密钥。
+该模式会先用 FFmpeg 提取纯音频，上传到 OSS，再由 DashScope 异步转录。当前已验证可用模型为 `paraformer-v2` 和 `sensevoice-v1`；`qwen-audio-asr` 在当前账号不可用。
 
 - `AUTOCLIP_AI_MODEL` 用于片段选择。
-- `AUTOCLIP_TRANSCRIBE_MODEL` 用于音频转录；未设置时沿用 `AUTOCLIP_AI_MODEL`。
+- `AUTOCLIP_ASR_API_KEY` 只用于 DashScope ASR，必须和选段服务的 key 分开配置。
 - `AUTOCLIP_CAPTION_SUFFIX` 设置后优先读取上传文件旁边的本地字幕，适合评测已带官方字幕的素材。
 
 密钥只能通过环境变量注入，不能提交到仓库。

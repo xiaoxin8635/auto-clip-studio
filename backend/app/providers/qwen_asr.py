@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
@@ -8,6 +9,7 @@ from typing import Protocol
 import httpx
 
 from ..schemas import ProviderResult, Transcript, TranscriptCue
+from ..media import ffmpeg_path
 from .base import AIProvider, ProviderError
 from .openai_compatible import OpenAICompatibleProvider
 
@@ -58,11 +60,18 @@ async def transcribe_with_qwen(
     duration_ms: int,
     config: QwenAsrConfig,
     client: httpx.AsyncClient | None = None,
+    extract_audio_callable=None,
     poll_interval_seconds: float = 2.0,
     timeout_seconds: int = 900,
 ) -> dict:
     try:
-        audio_url = await asyncio.to_thread(config.uploader.upload, media_path, media_path.name)
+        extract = extract_audio_callable or extract_audio
+        audio_path = await asyncio.to_thread(extract, media_path)
+        audio_url = await asyncio.to_thread(
+            config.uploader.upload,
+            audio_path,
+            f"{media_path.stem}.m4a",
+        )
     except (OSError, RuntimeError) as error:
         raise ProviderError(f"Audio upload failed: {error}") from error
 
@@ -71,16 +80,18 @@ async def transcribe_with_qwen(
     headers = {"Authorization": f"Bearer {config.api_key}"}
     submit_payload = {
         "model": config.model,
-        "input": {"file_url": audio_url},
+        "input": {"file_urls": [audio_url]},
         "parameters": {"timestamp": True},
     }
     try:
         submission = await client.post(
             f"{config.base_url}/api/v1/services/audio/asr/transcription",
-            headers=headers,
+            headers={**headers, "X-DashScope-Async": "enable"},
             json=submit_payload,
         )
-        submission.raise_for_status()
+        if submission.status_code >= 400:
+            detail = submission.text[:500]
+            raise ProviderError(f"Qwen ASR submission failed with {submission.status_code}: {detail}")
         task_id = submission.json().get("output", {}).get("task_id")
         if not task_id:
             raise ProviderError("Qwen ASR submission returned no task id")
@@ -89,7 +100,8 @@ async def transcribe_with_qwen(
         transcription_url = extract_transcription_url(result)
         transcription = await client.get(transcription_url)
         transcription.raise_for_status()
-        return normalize_transcription(transcription.json(), duration_ms)
+        payload = transcription.json()
+        return normalize_transcription(payload.get("output", payload), duration_ms)
     except ProviderError:
         raise
     except (httpx.HTTPError, ValueError, KeyError, TypeError, asyncio.TimeoutError) as error:
@@ -97,6 +109,35 @@ async def transcribe_with_qwen(
     finally:
         if own_client:
             await client.aclose()
+
+
+def extract_audio(source: Path) -> Path:
+    try:
+        import imageio_ffmpeg
+
+        output = source.with_name(f"{source.stem}.m4a")
+        subprocess.run(
+            [
+                ffmpeg_path(),
+                "-y",
+                "-i",
+                str(source),
+                "-vn",
+                "-ac",
+                "1",
+                "-ar",
+                "16000",
+                "-c:a",
+                "aac",
+                str(output),
+            ],
+            capture_output=True,
+            timeout=600,
+            check=True,
+        )
+        return output
+    except (OSError, ImportError, subprocess.SubprocessError) as error:
+        raise ProviderError(f"Audio extraction failed: {error}") from error
 
 
 async def wait_for_task(
@@ -141,8 +182,8 @@ def normalize_transcription(payload: dict, duration_ms: int) -> dict:
             text = str(cue.get("text", "")).strip()
             if start is None or end is None or not text:
                 continue
-            start_ms = int(float(start) * 1000)
-            end_ms = int(float(end) * 1000)
+            start_ms = int(start)
+            end_ms = int(end)
             if end_ms <= start_ms:
                 continue
             cues.append(

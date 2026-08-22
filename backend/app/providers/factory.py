@@ -5,7 +5,7 @@ from .base import AIProvider, ProviderError
 from .mock import MockProvider
 from .openai_compatible import OpenAICompatibleProvider
 from .qwen_asr import QwenAsrConfig, QwenAsrSelectorProvider
-from .uploaders import HttpPutUploader
+from .oss_uploader import OssSignerUploader
 
 
 def create_provider(settings: Settings) -> AIProvider:
@@ -18,6 +18,7 @@ def create_provider(settings: Settings) -> AIProvider:
                 "AUTOCLIP_AI_BASE_URL": settings.ai_base_url,
                 "AUTOCLIP_AI_API_KEY": settings.ai_api_key,
                 "AUTOCLIP_AI_MODEL": settings.ai_model,
+                "AUTOCLIP_ASR_API_KEY": settings.asr_api_key,
             }.items()
             if not value
         ]
@@ -37,7 +38,10 @@ def create_provider(settings: Settings) -> AIProvider:
                 "AUTOCLIP_AI_API_KEY": settings.ai_api_key,
                 "AUTOCLIP_AI_MODEL": settings.ai_model,
                 "AUTOCLIP_QWEN_ASR_MODEL": settings.qwen_asr_model,
-                "AUTOCLIP_MEDIA_UPLOAD_URL_TEMPLATE": settings.media_upload_url_template,
+                "AUTOCLIP_OSS_BUCKET": settings.oss_bucket,
+                "AUTOCLIP_OSS_ENDPOINT": settings.oss_endpoint,
+                "AUTOCLIP_OSS_ACCESS_KEY_ID": settings.oss_access_key_id,
+                "AUTOCLIP_OSS_ACCESS_KEY_SECRET": settings.oss_access_key_secret,
             }.items()
             if not value
         ]
@@ -48,9 +52,14 @@ def create_provider(settings: Settings) -> AIProvider:
             settings.ai_api_key,
             settings.ai_model,
         )
-        uploader = HttpPutUploader(settings.media_upload_url_template or "")
+        uploader = OssSignerUploader(
+            settings.oss_bucket or "",
+            settings.oss_endpoint or "",
+            settings.oss_access_key_id or "",
+            settings.oss_access_key_secret or "",
+        )
         return QwenAsrSelectorProvider(
-            QwenAsrConfig(settings.ai_api_key, settings.qwen_asr_model or "", uploader),
+            QwenAsrConfig(settings.asr_api_key or "", settings.qwen_asr_model or "", uploader),
             selector,
         )
     raise ProviderError(f"Unknown provider: {settings.provider}")

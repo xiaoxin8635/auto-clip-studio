@@ -18,8 +18,12 @@ class FakeUploader:
         return "https://storage.test/audio.mp4"
 
 
+def fake_extract_audio(source: Path) -> Path:
+    return source.with_name(f"{source.stem}.m4a")
+
+
 def config() -> QwenAsrConfig:
-    return QwenAsrConfig(api_key="key", model="qwen-audio-asr", uploader=FakeUploader())
+    return QwenAsrConfig(api_key="key", model="paraformer-v2", uploader=FakeUploader())
 
 
 @respx.mock
@@ -44,8 +48,8 @@ async def test_transcribe_with_qwen_polls_and_normalizes_result(tmp_path: Path):
                 "transcripts": [
                     {
                         "sentences": [
-                            {"begin_time": 1.2, "end_time": 3.4, "text": "Hello"},
-                            {"begin_time": 3.5, "end_time": 20, "text": "World"},
+                            {"begin_time": 1200, "end_time": 3400, "text": "Hello"},
+                            {"begin_time": 3500, "end_time": 20000, "text": "World"},
                         ]
                     }
                 ],
@@ -57,6 +61,7 @@ async def test_transcribe_with_qwen_polls_and_normalizes_result(tmp_path: Path):
         tmp_path / "video.mp4",
         5000,
         config(),
+        extract_audio_callable=fake_extract_audio,
         poll_interval_seconds=0,
     )
 
@@ -84,7 +89,8 @@ async def test_transcribe_with_qwen_reports_task_failure(tmp_path: Path):
         await transcribe_with_qwen(
             tmp_path / "video.mp4",
             5000,
-            config(),
+        config(),
+        extract_audio_callable=fake_extract_audio,
             poll_interval_seconds=0,
         )
 

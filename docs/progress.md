@@ -32,5 +32,6 @@
 - Module gate: 7 focused tests and the full 34-test backend regression passed; verified the tool prepares two educational videos with five caption-derived draft segments each.
 - Split ASR and segment-selection model settings and added optional local SRT transcript input for caption-backed evaluation.
 - Verified the existing ccswitch `GLM-ulib` endpoint can select five valid segments from 144 official caption cues in about 7.5 seconds; full backend regression passed with 35 tests.
-- Added a DashScope Qwen ASR provider that submits timestamped transcription jobs, polls task state, downloads normalized results, and delegates selection to an OpenAI-compatible LLM. Media can be uploaded through a signed PUT URL template without embedding storage credentials in the backend.
-- Module gate: focused Qwen ASR, uploader, and factory tests passed; full backend regression passed with 42 tests.
+- Added the production ASR path: FFmpeg extracts mono 16 kHz audio, OSS uploads it with SDK signing, DashScope runs timestamped transcription, and an OpenAI-compatible LLM selects segments. ASR now uses `AUTOCLIP_ASR_API_KEY`, separate from the selector key.
+- Real-service probe verified `paraformer-v2` works through the native DashScope async API and returns sentence timestamps; obsolete `qwen-audio-asr` configuration was removed from documentation.
+- Module gate: focused Qwen ASR/OSS/factory tests passed (9 tests), then full backend regression passed with 44 tests. Review covered secrets isolation, upload boundary normalization, recoverable provider errors, and configuration documentation.
