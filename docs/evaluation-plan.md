@@ -86,3 +86,23 @@ python -m app.evaluation .local/annotations.json .local/results.json --output do
 ```
 
 工具会校验输入结构、去重、边界合法性，计算命中率、平均边界误差、字幕可用率、渲染成功率和端到端耗时，并生成 Markdown 汇总与明细表。
+
+## 自动准备素材草稿
+
+可以使用 NASA 图片视频 API 自动下载带官方字幕的公共素材，并生成标注草稿：
+
+```bash
+cd backend
+python -m app.prepare_evaluation \
+  --query "NASA educational video" \
+  --count 5 \
+  --max-variant mobile \
+  --output ..\.local\evaluation-nasa
+```
+
+说明：
+
+- 只下载带 `.srt` 字幕的 MP4。
+- 下载文件和字幕只保存在 `.local/`，不会提交仓库。
+- 生成的 `annotations.json` 只是草稿，必须人工检查标题、理由和起止点后再作为正式标注。
+- `--max-variant` 控制清晰度与体积，`mobile` 通常适合本机评测；`medium` 更清晰但下载更慢。
