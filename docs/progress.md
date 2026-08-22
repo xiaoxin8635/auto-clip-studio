@@ -17,3 +17,5 @@
 - Added GitHub Actions CI for backend tests with FFmpeg and frontend test/build.
 - M1: Added recent project summaries and frontend project recovery, so browser refresh no longer loses work.
 - Module gate: backend project-list tests and frontend tests/build passed; contract and progress docs updated.
+- M1: Hardened OpenAI-compatible provider with bounded transcript cues, retry/backoff for 408/429/5xx, transport error handling, and strict JSON extraction.
+- Module gate: provider tests passed, including mocked rate-limit retry.

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import asyncio
 from pathlib import Path
 
 import httpx
@@ -10,14 +11,22 @@ from .base import AIProvider, ProviderError
 
 
 class OpenAICompatibleProvider(AIProvider):
-    def __init__(self, base_url: str, api_key: str, model: str, timeout: float = 120.0):
+    def __init__(
+        self,
+        base_url: str,
+        api_key: str,
+        model: str,
+        timeout: float = 120.0,
+        max_attempts: int = 3,
+    ):
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self.model = model
         self.timeout = timeout
+        self.max_attempts = max_attempts
 
     async def analyze(self, media_path: Path, duration_ms: int) -> ProviderResult:
-        transcript = Transcript.model_validate(await self._transcribe(media_path))
+        transcript = Transcript.model_validate(await self._transcribe(media_path, duration_ms))
         return ProviderResult.model_validate(
             {
                 "transcript": transcript.model_dump(),
@@ -25,11 +34,13 @@ class OpenAICompatibleProvider(AIProvider):
             }
         )
 
-    async def _transcribe(self, media_path: Path) -> dict:
+    async def _transcribe(self, media_path: Path, duration_ms: int) -> dict:
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 with media_path.open("rb") as media:
-                    response = await client.post(
+                    response = await self._request_with_retry(
+                        client,
+                        "POST",
                         f"{self.base_url}/audio/transcriptions",
                         headers={"Authorization": f"Bearer {self.api_key}"},
                         data={"model": self.model, "response_format": "verbose_json"},
@@ -51,11 +62,11 @@ class OpenAICompatibleProvider(AIProvider):
                     text = str(payload.get("text", "")).strip()
                     if not text:
                         raise ProviderError("Transcription provider returned no text")
-                    normalized = [{"start_ms": 0, "end_ms": min(duration_ms, 5000), "text": text[:2000]}]
+                    normalized = [{"start_ms": 0, "end_ms": max(duration_ms, 1000), "text": text[:2000]}]
                 return {"language": str(payload.get("language") or "zh"), "cues": normalized}
         except ProviderError:
             raise
-        except (httpx.HTTPError, ValueError, KeyError) as exc:
+        except (httpx.HTTPError, ValueError, KeyError, asyncio.TimeoutError) as exc:
             raise ProviderError(f"Transcription failed: {exc}") from exc
 
     async def _select_segments(self, transcript: dict, duration_ms: int) -> list[dict]:
@@ -81,7 +92,44 @@ class OpenAICompatibleProvider(AIProvider):
                 )
                 response.raise_for_status()
                 content = response.json()["choices"][0]["message"]["content"]
-                parsed = json.loads(content[content.find("{") : content.rfind("}") + 1])
+                parsed = extract_json_object(content)
+                if not isinstance(parsed, dict) or not isinstance(parsed.get("segments"), list):
+                    raise ProviderError("Segment selection response has no segments list")
                 return parsed.get("segments", [])
         except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
             raise ProviderError(f"Segment selection failed: {exc}") from exc
+
+    async def _request_with_retry(self, client: httpx.AsyncClient, method: str, url: str, **kwargs) -> httpx.Response:
+        last_error: Exception | None = None
+        for attempt in range(self.max_attempts):
+            try:
+                response = await client.request(method, url, **kwargs)
+                if response.status_code in {408, 429} or response.status_code >= 500:
+                    last_error = httpx.HTTPStatusError(
+                        f"Provider returned {response.status_code}", request=response.request, response=response
+                    )
+                    if attempt + 1 == self.max_attempts:
+                        raise last_error
+                else:
+                    response.raise_for_status()
+                    return response
+            except httpx.TransportError as exc:
+                last_error = exc
+                if attempt + 1 == self.max_attempts:
+                    raise ProviderError(f"Provider transport failed: {exc}") from exc
+            await asyncio.sleep(0.5 * (2**attempt))
+        raise last_error or ProviderError("Provider request failed")
+
+
+def extract_json_object(content: str) -> dict | list | None:
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        start = content.find("{")
+        end = content.rfind("}")
+        if start < 0 or end <= start:
+            return None
+        try:
+            return json.loads(content[start : end + 1])
+        except json.JSONDecodeError:
+            return None
