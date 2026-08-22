@@ -30,3 +30,5 @@
 - Module gate: 5 focused evaluation tests passed; reviewed matching behavior, duplicate/missing/malformed input errors, and evaluation-plan documentation sync.
 - Added NASA caption-backed media preparation tooling that searches public media, chooses bounded MP4 variants, downloads into `.local/`, parses official captions, and creates reviewable annotation drafts.
 - Module gate: 7 focused tests and the full 34-test backend regression passed; verified the tool prepares two educational videos with five caption-derived draft segments each.
+- Split ASR and segment-selection model settings and added optional local SRT transcript input for caption-backed evaluation.
+- Verified the existing ccswitch `GLM-ulib` endpoint can select five valid segments from 144 official caption cues in about 7.5 seconds; full backend regression passed with 35 tests.

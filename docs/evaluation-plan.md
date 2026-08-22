@@ -106,3 +106,16 @@ python -m app.prepare_evaluation \
 - 下载文件和字幕只保存在 `.local/`，不会提交仓库。
 - 生成的 `annotations.json` 只是草稿，必须人工检查标题、理由和起止点后再作为正式标注。
 - `--max-variant` 控制清晰度与体积，`mobile` 通常适合本机评测；`medium` 更清晰但下载更慢。
+
+## 使用 GLM-ulib 评测
+
+已验证 ccswitch 中的 `GLM-ulib` 配置可用于片段选择：
+
+```text
+AUTOCLIP_PROVIDER=openai-compatible
+AUTOCLIP_AI_BASE_URL=https://peuyai.ulib.top/v1
+AUTOCLIP_AI_MODEL=glm-5.3
+AUTOCLIP_CAPTION_SUFFIX=.srt
+```
+
+该服务的 `/audio/transcriptions` 对 `glm-5.3` 返回 not implemented，因此评测时使用 NASA 官方 `.srt` 作为转录真值；GLM 只负责选段。正式接入真实 ASR 后，移除 `AUTOCLIP_CAPTION_SUFFIX` 并设置 `AUTOCLIP_TRANSCRIBE_MODEL`。

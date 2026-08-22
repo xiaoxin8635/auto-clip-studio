@@ -21,5 +21,11 @@ def create_provider(settings: Settings) -> AIProvider:
         ]
         if missing:
             raise ProviderError(f"Missing provider settings: {', '.join(missing)}")
-        return OpenAICompatibleProvider(settings.ai_base_url, settings.ai_api_key, settings.ai_model)
+        return OpenAICompatibleProvider(
+            settings.ai_base_url,
+            settings.ai_api_key,
+            settings.ai_model,
+            transcribe_model=settings.transcribe_model,
+            caption_suffix=settings.caption_suffix,
+        )
     raise ProviderError(f"Unknown provider: {settings.provider}")

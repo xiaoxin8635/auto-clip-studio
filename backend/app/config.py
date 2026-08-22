@@ -12,6 +12,8 @@ class Settings(BaseModel):
     ai_base_url: str | None = None
     ai_api_key: str | None = None
     ai_model: str | None = None
+    transcribe_model: str | None = None
+    caption_suffix: str | None = None
     max_upload_bytes: int = 500 * 1024 * 1024
     environment: str = "local"
 
@@ -26,5 +28,7 @@ def get_settings() -> Settings:
         ai_base_url=os.getenv("AUTOCLIP_AI_BASE_URL"),
         ai_api_key=os.getenv("AUTOCLIP_AI_API_KEY"),
         ai_model=os.getenv("AUTOCLIP_AI_MODEL"),
+        transcribe_model=os.getenv("AUTOCLIP_TRANSCRIBE_MODEL"),
+        caption_suffix=os.getenv("AUTOCLIP_CAPTION_SUFFIX"),
         environment=os.getenv("AUTOCLIP_ENV", "local"),
     )

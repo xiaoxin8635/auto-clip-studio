@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import asyncio
+import re
 from pathlib import Path
 
 import httpx
@@ -16,12 +17,16 @@ class OpenAICompatibleProvider(AIProvider):
         base_url: str,
         api_key: str,
         model: str,
+        transcribe_model: str | None = None,
+        caption_suffix: str | None = None,
         timeout: float = 120.0,
         max_attempts: int = 3,
     ):
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self.model = model
+        self.transcribe_model = transcribe_model or model
+        self.caption_suffix = caption_suffix
         self.timeout = timeout
         self.max_attempts = max_attempts
 
@@ -35,6 +40,14 @@ class OpenAICompatibleProvider(AIProvider):
         )
 
     async def _transcribe(self, media_path: Path, duration_ms: int) -> dict:
+        if self.caption_suffix:
+            caption_path = media_path.with_name(media_path.name + self.caption_suffix)
+            if not caption_path.exists():
+                raise ProviderError(f"Caption file is missing: {caption_path.name}")
+            try:
+                return parse_srt(caption_path.read_text(encoding="utf-8-sig"), duration_ms)
+            except OSError as error:
+                raise ProviderError(f"Caption file cannot be read: {error}") from error
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 with media_path.open("rb") as media:
@@ -43,7 +56,7 @@ class OpenAICompatibleProvider(AIProvider):
                         "POST",
                         f"{self.base_url}/audio/transcriptions",
                         headers={"Authorization": f"Bearer {self.api_key}"},
-                        data={"model": self.model, "response_format": "verbose_json"},
+                        data={"model": self.transcribe_model, "response_format": "verbose_json"},
                         files={"file": (media_path.name, media, "application/octet-stream")},
                     )
                 response.raise_for_status()
@@ -119,6 +132,29 @@ class OpenAICompatibleProvider(AIProvider):
                     raise ProviderError(f"Provider transport failed: {exc}") from exc
             await asyncio.sleep(0.5 * (2**attempt))
         raise last_error or ProviderError("Provider request failed")
+
+
+def parse_srt(content: str, duration_ms: int) -> dict:
+    cues = []
+    for block in re.split(r"\r?\n\r?\n", content.strip()):
+        lines = [line.strip() for line in block.splitlines() if line.strip()]
+        if len(lines) < 2 or "-->" not in lines[1]:
+            continue
+        match = re.match(
+            r"(\d+):(\d+):(\d+)[,.](\d+)\s*-->\s*(\d+):(\d+):(\d+)[,.](\d+)", lines[1]
+        )
+        if not match:
+            continue
+        values = [int(value) for value in match.groups()]
+        start = values[0] * 3_600_000 + values[1] * 60_000 + values[2] * 1000 + values[3]
+        end = values[4] * 3_600_000 + values[5] * 60_000 + values[6] * 1000 + values[7]
+        text = " ".join(lines[2:]).strip()
+        if end <= start or not text:
+            continue
+        cues.append({"start_ms": start, "end_ms": min(end, duration_ms), "text": text})
+    if not cues:
+        raise ProviderError("Caption file contains no usable cues")
+    return {"language": "en", "cues": cues}
 
 
 def extract_json_object(content: str) -> dict | list | None:

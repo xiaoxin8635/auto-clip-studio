@@ -46,6 +46,17 @@ AUTOCLIP_AI_API_KEY=your-key
 AUTOCLIP_AI_MODEL=your-model
 ```
 
+可选配置：
+
+```text
+AUTOCLIP_TRANSCRIBE_MODEL=your-asr-model
+AUTOCLIP_CAPTION_SUFFIX=.srt
+```
+
+- `AUTOCLIP_AI_MODEL` 用于片段选择。
+- `AUTOCLIP_TRANSCRIBE_MODEL` 用于音频转录；未设置时沿用 `AUTOCLIP_AI_MODEL`。
+- `AUTOCLIP_CAPTION_SUFFIX` 设置后优先读取上传文件旁边的本地字幕，适合评测已带官方字幕的素材。
+
 密钥只能通过环境变量注入，不能提交到仓库。
 
 ## 开发流程
