@@ -1,0 +1,176 @@
+:root {
+  color: #17202a;
+  font-family: Inter, "Segoe UI", "Microsoft YaHei", sans-serif;
+  background: #eef1f4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.workspace {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.topbar strong {
+  margin-right: 10px;
+  font-size: 20px;
+}
+
+.status {
+  border: 1px solid #9aa8b5;
+  border-radius: 999px;
+  padding: 6px 14px;
+  background: white;
+  font-size: 13px;
+}
+
+.status.failed {
+  border-color: #d94f45;
+  color: #a4271d;
+}
+
+section {
+  background: white;
+  border: 1px solid #d8dee5;
+  border-radius: 8px;
+  padding: 18px;
+  margin-bottom: 16px;
+}
+
+h2 {
+  margin: 0 0 14px;
+  font-size: 16px;
+}
+
+.upload-panel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.upload-panel h2 {
+  width: 100%;
+  margin: 0;
+}
+
+button,
+a {
+  border: 1px solid #24485f;
+  border-radius: 5px;
+  padding: 8px 13px;
+  color: #24485f;
+  background: white;
+  cursor: pointer;
+  font-size: 13px;
+  text-decoration: none;
+  display: inline-block;
+}
+
+button.primary,
+a.primary {
+  background: #1769aa;
+  border-color: #1769aa;
+  color: white;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.error {
+  color: #a4271d;
+}
+
+.timeline {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(80px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timeline li {
+  border-bottom: 3px solid #ccd5dd;
+  color: #64748b;
+  font-size: 12px;
+  padding-bottom: 7px;
+}
+
+.timeline li.active {
+  border-color: #1769aa;
+  color: #1769aa;
+  font-weight: 700;
+}
+
+.segments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 14px;
+}
+
+.segment-card {
+  border: 1px solid #d8dee5;
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.segment-card header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.segment-card h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.edit-form {
+  display: grid;
+  gap: 8px;
+}
+
+.edit-form label {
+  display: grid;
+  font-size: 12px;
+  gap: 4px;
+}
+
+.edit-form input {
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  padding: 8px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+@media (max-width: 720px) {
+  .workspace {
+    padding: 14px;
+  }
+
+  .timeline {
+    grid-template-columns: 1fr 1fr;
+  }
+}

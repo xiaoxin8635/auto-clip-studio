@@ -12,3 +12,5 @@
 - Module gate: 10 backend tests passed; reviewed upload limits, safe storage paths, provider output boundaries, retry states, and generated fixture isolation.
 - Added segment editing, FFmpeg 9:16 rendering with caption burn-in, runtime path checks, rendered download API, and recoverable render failure state.
 - Module gate: 15 backend tests passed, including a real upload -> analyze -> adjust -> render -> download end-to-end flow.
+- Added React workbench for upload, status polling, transcript review, segment editing, rendering, and downloads.
+- Module gate: frontend test and production build passed; reviewed polling boundaries, action disabling, error visibility, and API contract alignment.
