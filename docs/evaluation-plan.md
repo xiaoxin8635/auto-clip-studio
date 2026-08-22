@@ -35,6 +35,31 @@
 }
 ```
 
+标注文件必须是一个 JSON 数组，每个视频一条记录；`video` 不能重复。
+
+## 结果格式
+
+每次真实 Provider 评测完成后，在本机记录候选片段和过程指标（文件放在 `.local/`，不要提交）：
+
+```json
+{
+  "video": "podcast-01.mp4",
+  "candidates": [
+    {
+      "title": "AI 生成的候选标题",
+      "start_ms": 120000,
+      "end_ms": 165000
+    }
+  ],
+  "transcript_usable": true,
+  "rendered": true,
+  "analysis_ms": 180000,
+  "failure_reason": ""
+}
+```
+
+结果文件同样必须是 JSON 数组，且与标注文件的 `video` 集合完全一致。
+
 ## 指标
 
 - 选段命中率：候选片段与人工理想片段时间重叠超过 50% 记为命中
@@ -51,3 +76,13 @@
 - 渲染成功率不低于 95%
 
 结果记录到 `docs/evaluation-report.md`，包含每条素材的原始表现和失败原因。
+
+## 生成报告
+
+在项目根目录执行：
+
+```bash
+python -m app.evaluation .local/annotations.json .local/results.json --output docs/evaluation-report.md
+```
+
+工具会校验输入结构、去重、边界合法性，计算命中率、平均边界误差、字幕可用率、渲染成功率和端到端耗时，并生成 Markdown 汇总与明细表。

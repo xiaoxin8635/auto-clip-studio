@@ -26,3 +26,5 @@
 - M1: Added a 10-video real-provider evaluation plan and report placeholder.
 - Hardened repository hygiene with broad media, secret, database, log, cache, and temporary-file ignore rules while preserving the required sample video fixture.
 - Module gate: backend and frontend regressions passed; verified secret/media probes are ignored and the fixture remains tracked.
+- Added an offline evaluation summarizer with schema-validated annotation/result inputs, one-to-one segment matching, boundary-error metrics, and Markdown report generation.
+- Module gate: 5 focused evaluation tests passed; reviewed matching behavior, duplicate/missing/malformed input errors, and evaluation-plan documentation sync.
