@@ -35,5 +35,17 @@ def project_to_out(project: Project) -> dict:
     }
 
 
+def project_to_summary(project: Project) -> dict:
+    return {
+        "id": project.id,
+        "status": project.status,
+        "source_filename": project.source_filename,
+        "duration_ms": project.duration_ms,
+        "segment_count": len(project.segments),
+        "created_at": project.created_at.isoformat(),
+        "error_message": project.error_message,
+    }
+
+
 def validated_transcript(value: dict | None) -> Transcript | None:
     return Transcript.model_validate(value) if value is not None else None

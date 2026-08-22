@@ -6,7 +6,9 @@ from pathlib import Path
 
 from fastapi import BackgroundTasks, FastAPI, File, HTTPException, Response, UploadFile
 from fastapi.responses import FileResponse
+from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
+from sqlalchemy import desc
 
 from .config import get_settings
 from .db import init_db, session_scope
@@ -17,6 +19,7 @@ from .rendering import run_render
 from .schemas import ProjectCreate
 from .schemas import SegmentUpdate
 from .serialization import project_to_out
+from .serialization import project_to_summary
 from .state_machine import InvalidTransitionError, advance
 
 
@@ -44,6 +47,14 @@ def create_project(response: Response, _: ProjectCreate | None = None):
         project_id = project.id
     response.headers["Location"] = f"/api/projects/{project_id}"
     return result
+
+
+@app.get("/api/projects")
+def list_projects(limit: int = 20):
+    limit = min(max(limit, 1), 100)
+    with session_scope() as session:
+        projects = session.scalars(select(Project).order_by(desc(Project.created_at)).limit(limit)).all()
+        return {"items": [project_to_summary(project) for project in projects]}
 
 
 @app.get("/api/projects/{project_id}")

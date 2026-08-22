@@ -17,3 +17,13 @@ def test_missing_project_returns_404(client):
     response = client.get("/api/projects/does-not-exist")
     assert response.status_code == 404
     assert response.json()["detail"] == "Project not found"
+
+
+def test_project_list_returns_recent_projects(client):
+    first = client.post("/api/projects").json()
+    second = client.post("/api/projects").json()
+    response = client.get("/api/projects?limit=10")
+    assert response.status_code == 200
+    items = response.json()["items"]
+    assert [item["id"] for item in items] == [second["id"], first["id"]]
+    assert items[0]["segment_count"] == 0

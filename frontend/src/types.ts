@@ -18,3 +18,13 @@ export interface Project {
   error_message?: string | null;
   segments: Segment[];
 }
+
+export interface ProjectSummary {
+  id: string;
+  status: string;
+  source_filename?: string | null;
+  duration_ms: number;
+  segment_count: number;
+  created_at: string;
+  error_message?: string | null;
+}

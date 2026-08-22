@@ -15,3 +15,5 @@
 - Added React workbench for upload, status polling, transcript review, segment editing, rendering, and downloads.
 - Module gate: frontend test and production build passed; reviewed polling boundaries, action disabling, error visibility, and API contract alignment.
 - Added GitHub Actions CI for backend tests with FFmpeg and frontend test/build.
+- M1: Added recent project summaries and frontend project recovery, so browser refresh no longer loses work.
+- Module gate: backend project-list tests and frontend tests/build passed; contract and progress docs updated.

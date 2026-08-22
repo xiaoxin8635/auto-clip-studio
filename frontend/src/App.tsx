@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import { SegmentCard } from "./SegmentCard";
-import type { Project } from "./types";
+import type { Project, ProjectSummary } from "./types";
 import { isBusy, label } from "./status";
 
 const steps = ["created", "uploaded", "transcribing", "selecting", "awaiting_review", "rendering", "completed"];
 
 export function App() {
   const [project, setProject] = useState<Project | null>(null);
+  const [recentProjects, setRecentProjects] = useState<ProjectSummary[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -20,6 +21,19 @@ export function App() {
       setError(exc instanceof Error ? exc.message : "无法读取项目");
     }
   }, []);
+
+  const loadRecentProjects = useCallback(async () => {
+    try {
+      const payload = await api.projects();
+      setRecentProjects(payload.items);
+    } catch {
+      setRecentProjects([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadRecentProjects();
+  }, [loadRecentProjects]);
 
   useEffect(() => {
     if (!project || !isBusy(project.status)) return;
@@ -37,6 +51,7 @@ export function App() {
       setProject(uploaded);
       await api.analyze(uploaded.id);
       await refresh(uploaded.id);
+      void loadRecentProjects();
     } catch (exc) {
       setError(exc instanceof Error ? exc.message : "启动失败");
     } finally {
@@ -66,6 +81,25 @@ export function App() {
         </div>
         {project && <span className={`status ${project.status}`}>{label(project.status)}</span>}
       </header>
+
+      <section className="recent-projects">
+        <h2>最近项目</h2>
+        {recentProjects.length === 0 ? (
+          <p className="muted">暂无项目</p>
+        ) : (
+          <ul>
+            {recentProjects.map((item) => (
+              <li key={item.id}>
+                <button className="link-button" onClick={() => void refresh(item.id)}>
+                  {item.source_filename ?? item.id}
+                </button>
+                <span>{label(item.status)}</span>
+                <small>{new Date(item.created_at).toLocaleString()}</small>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section className="upload-panel">
         <h2>新建剪辑任务</h2>

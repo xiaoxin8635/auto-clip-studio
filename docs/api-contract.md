@@ -5,6 +5,7 @@ See `.codex/skills/auto-clip-studio/references/api-contract.md` for the canonica
 Current endpoints:
 
 - `POST /api/projects`
+- `GET /api/projects`
 - `POST /api/projects/{project_id}/upload`
 - `POST /api/projects/{project_id}/analyze`
 - `GET /api/projects/{project_id}`

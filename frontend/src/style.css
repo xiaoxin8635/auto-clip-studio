@@ -63,6 +63,37 @@ h2 {
   flex-wrap: wrap;
 }
 
+.recent-projects ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recent-projects li {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) 90px auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.recent-projects small {
+  color: #64748b;
+}
+
+.muted {
+  color: #64748b;
+}
+
+.link-button {
+  border: 0;
+  padding: 0;
+  color: #1769aa;
+  background: transparent;
+  text-align: left;
+}
+
 .upload-panel h2 {
   width: 100%;
   margin: 0;

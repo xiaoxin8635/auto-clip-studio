@@ -1,4 +1,4 @@
-import type { Project, Segment } from "./types";
+import type { Project, ProjectSummary, Segment } from "./types";
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, options);
@@ -17,6 +17,7 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 
 export const api = {
   createProject: () => request<Project>("/api/projects", { method: "POST" }),
+  projects: () => request<{ items: ProjectSummary[] }>("/api/projects"),
   upload: (projectId: string, file: File) => {
     const form = new FormData();
     form.append("file", file);

@@ -8,6 +8,12 @@ Creates a project. Body may be empty.
 
 Response: `ProjectDetail`
 
+## GET /projects?limit=
+
+Returns recent project summaries in descending creation order. `limit` is clamped to 1-100 and defaults to 20.
+
+Response fields: `id`, `status`, `source_filename`, `duration_ms`, `segment_count`, `created_at`, `error_message`.
+
 ## POST /projects/{project_id}/upload
 
  multipart/form-data field `file`, allowed `.mp4` and `.mov`, maximum 500 MiB.
