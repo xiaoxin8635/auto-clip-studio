@@ -24,3 +24,5 @@
 - M1: Added Alembic migrations, MIME allowlist validation, and orphan runtime-file cleanup.
 - Module gate: focused cleanup/upload tests and full 20-test backend regression passed.
 - M1: Added a 10-video real-provider evaluation plan and report placeholder.
+- Hardened repository hygiene with broad media, secret, database, log, cache, and temporary-file ignore rules while preserving the required sample video fixture.
+- Module gate: backend and frontend regressions passed; verified secret/media probes are ignored and the fixture remains tracked.

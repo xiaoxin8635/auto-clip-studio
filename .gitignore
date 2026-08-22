@@ -1,17 +1,86 @@
+# Runtime data
 .local/
+
+# Dependencies and build output
 node_modules/
 dist/
+build/
 frontend/tsconfig.tsbuildinfo
+
+# Python runtime and packaging
 __pycache__/
 .pytest_cache/
 .ruff_cache/
 .venv/
+*.egg-info/
+
+# Coverage and test output
+coverage/
+.coverage*
+htmlcov/
+junit*.xml
+
+# Databases and runtime state
+*.sqlite
 *.sqlite3
 *.db
-*.egg-info/
-coverage/
+*.sqlite3-journal
+*.db-journal
+
+# Environment files and secrets
 .env
 .env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+secrets.*
+credentials.json
+service-account*.json
+*.token
+*.secret
+
+# User media and generated audio/video
+*.mp3
+*.wav
+*.flac
+*.ogg
+*.m4a
+*.aac
+*.opus
+*.mov
+*.avi
+*.mkv
+*.webm
+*.wmv
+*.flv
+*.m4v
+*.mpg
+*.mpeg
+*.mts
+*.ts
+*.srt
+*.vtt
+*.ass
+*.ssa
+# Keep the tiny checked-in fixture required by automated tests.
+!backend/tests/fixtures/sample.mp4
+
+# Logs and temporary files
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# Editor and OS files
 .idea/
 .vscode/
 .DS_Store
+Thumbs.db
