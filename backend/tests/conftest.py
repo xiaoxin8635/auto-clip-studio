@@ -12,7 +12,10 @@ from fastapi.testclient import TestClient
 @pytest.fixture
 def temp_storage(tmp_path, monkeypatch):
     data_dir = tmp_path / "local"
-    monkeypatch.setattr(get_settings, "__call__", lambda: type(get_settings())(data_dir=data_dir))
+    monkeypatch.setenv("AUTOCLIP_DATA_DIR", str(data_dir))
+    get_settings.cache_clear()
+    yield data_dir
+    get_settings.cache_clear()
     reset_db_cache()
     return data_dir
 
