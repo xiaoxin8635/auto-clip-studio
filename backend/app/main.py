@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import BackgroundTasks, FastAPI, File, HTTPException, Response, UploadFile
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from .config import get_settings
@@ -12,7 +13,9 @@ from .db import init_db, session_scope
 from .media import MediaToolError, probe_media
 from .models import Project
 from .pipeline import run_analysis
+from .rendering import run_render
 from .schemas import ProjectCreate
+from .schemas import SegmentUpdate
 from .serialization import project_to_out
 from .state_machine import InvalidTransitionError, advance
 
@@ -103,8 +106,68 @@ def analyze_video(project_id: str, background_tasks: BackgroundTasks):
     return {"status": "transcribing"}
 
 
+@app.patch("/api/projects/{project_id}/segments/{segment_id}")
+def update_segment(project_id: str, segment_id: str, payload: SegmentUpdate):
+    with session_scope() as session:
+        project = _get_project_or_404(session, project_id)
+        segment = _get_segment_or_404(project, segment_id)
+        if project.status not in {"awaiting_review", "failed"}:
+            raise HTTPException(status_code=409, detail="Segments can only be edited during review")
+        start = payload.start_ms if payload.start_ms is not None else segment.start_ms
+        end = payload.end_ms if payload.end_ms is not None else segment.end_ms
+        if start < 0 or end <= start or (project.duration_ms and end > project.duration_ms):
+            raise HTTPException(status_code=422, detail="Segment boundaries are invalid")
+        if payload.title is not None:
+            segment.title = payload.title
+        segment.start_ms = start
+        segment.end_ms = end
+        segment.status = "updated"
+        return {
+            "id": segment.id,
+            "title": segment.title,
+            "rationale": segment.rationale,
+            "start_ms": segment.start_ms,
+            "end_ms": segment.end_ms,
+            "caption_text": segment.caption_text,
+            "status": segment.status,
+            "download_url": None,
+        }
+
+
+@app.post("/api/projects/{project_id}/segments/{segment_id}/render", status_code=202)
+def render_segment(project_id: str, segment_id: str, background_tasks: BackgroundTasks):
+    with session_scope() as session:
+        project = _get_project_or_404(session, project_id)
+        segment = _get_segment_or_404(project, segment_id)
+        if project.status not in {"awaiting_review", "completed", "failed"}:
+            raise HTTPException(status_code=409, detail="Project must be awaiting review before rendering")
+        try:
+            advance(project, "rendering")
+        except InvalidTransitionError as exc:
+            raise HTTPException(status_code=409, detail="Project cannot start rendering") from exc
+    background_tasks.add_task(run_render, project_id, segment_id)
+    return {"status": "rendering"}
+
+
+@app.get("/api/projects/{project_id}/segments/{segment_id}/download")
+def download_segment(project_id: str, segment_id: str):
+    with session_scope() as session:
+        project = _get_project_or_404(session, project_id)
+        segment = _get_segment_or_404(project, segment_id)
+        if not segment.output_path or project.status != "completed":
+            raise HTTPException(status_code=409, detail="Segment has not been rendered")
+        return FileResponse(segment.output_path, media_type="video/mp4", filename=f"{segment.title}.mp4")
+
+
 def _get_project_or_404(session: Session, project_id: str) -> Project:
     project = session.get(Project, project_id)
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
     return project
+
+
+def _get_segment_or_404(project: Project, segment_id: str):
+    segment = next((item for item in project.segments if item.id == segment_id), None)
+    if segment is None:
+        raise HTTPException(status_code=404, detail="Segment not found")
+    return segment
