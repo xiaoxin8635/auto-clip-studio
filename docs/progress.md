@@ -14,3 +14,4 @@
 - Module gate: 15 backend tests passed, including a real upload -> analyze -> adjust -> render -> download end-to-end flow.
 - Added React workbench for upload, status polling, transcript review, segment editing, rendering, and downloads.
 - Module gate: frontend test and production build passed; reviewed polling boundaries, action disabling, error visibility, and API contract alignment.
+- Added GitHub Actions CI for backend tests with FFmpeg and frontend test/build.

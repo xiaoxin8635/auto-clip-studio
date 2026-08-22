@@ -1,6 +1,7 @@
 .local/
 node_modules/
 dist/
+frontend/tsconfig.tsbuildinfo
 __pycache__/
 .pytest_cache/
 .ruff_cache/
@@ -11,4 +12,6 @@ __pycache__/
 coverage/
 .env
 .env.*
+.idea/
+.vscode/
 .DS_Store
