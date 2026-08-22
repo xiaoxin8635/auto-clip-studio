@@ -23,3 +23,4 @@
 - Module gate: batch-render API tests and frontend test/build passed.
 - M1: Added Alembic migrations, MIME allowlist validation, and orphan runtime-file cleanup.
 - Module gate: focused cleanup/upload tests and full 20-test backend regression passed.
+- M1: Added a 10-video real-provider evaluation plan and report placeholder.
