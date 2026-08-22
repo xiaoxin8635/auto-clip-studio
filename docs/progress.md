@@ -6,3 +6,5 @@
 - Created engineering standards, project skill, architecture notes, and API contract.
 - Selected FastAPI + SQLite + React + FFmpeg.
 - Runtime data is isolated under `.local/` and ignored by git.
+- Added backend foundation: isolated configuration, SQLAlchemy models, SQLite initialization, project creation/detail API, and enforced state machine.
+- Module gate: 6 focused tests passed; reviewed state transitions, storage isolation, error paths, and documentation consistency.

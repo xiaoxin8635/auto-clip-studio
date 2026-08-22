@@ -1,0 +1,1 @@
+"""AutoClip Studio backend."""
