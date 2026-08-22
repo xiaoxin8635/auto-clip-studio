@@ -37,6 +37,16 @@ def test_upload_rejects_wrong_extension(client, created_project):
     assert response.json()["detail"] == "Only MP4 and MOV files are supported"
 
 
+def test_upload_rejects_wrong_mime_type(client, created_project):
+    path = Path(__file__).parent / "fixtures" / "sample.mp4"
+    response = client.post(
+        f"/api/projects/{created_project['id']}/upload",
+        files={"file": ("sample.mp4", path.read_bytes() if path.exists() else b"video", "text/plain")},
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Unsupported video MIME type"
+
+
 def test_upload_rejects_second_upload(client, created_project):
     assert upload(client, created_project["id"]).status_code == 200
     assert upload(client, created_project["id"]).status_code == 409

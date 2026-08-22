@@ -48,6 +48,7 @@ class Segment(Base):
     end_ms: Mapped[int] = mapped_column(Integer)
     caption_text: Mapped[str] = mapped_column(String(2000), default="")
     status: Mapped[str] = mapped_column(String(32), default="proposed")
+    render_attempts: Mapped[int] = mapped_column(Integer, default=0)
     output_path: Mapped[str | None] = mapped_column(String(1024))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)

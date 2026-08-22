@@ -20,6 +20,8 @@ Response fields: `id`, `status`, `source_filename`, `duration_ms`, `segment_coun
 
 Errors: `400` for invalid file, `409` for invalid state.
 
+MIME type must be `video/mp4`, `video/quicktime`, or browser fallback `application/octet-stream`.
+
 ## POST /projects/{project_id}/analyze
 
 Starts transcription and selection asynchronously. Allowed from `uploaded`, `failed` while an upload exists, and failed analysis retries.

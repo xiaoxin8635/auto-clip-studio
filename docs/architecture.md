@@ -41,3 +41,14 @@ Provider 输出必须先通过 Pydantic 校验，再进入数据库。网络或�
 ## 部署边界
 
 MVP 使用 SQLite 与 FastAPI BackgroundTasks，适合单机开发。多实例部署前应将数据库、任务队列和对象存储拆开。
+
+## 数据库迁移
+
+数据库结构变更通过 Alembic 管理：
+
+```bash
+cd backend
+python -m alembic upgrade head
+```
+
+应用启动时会自动执行迁移；新库和既有库都兼容。

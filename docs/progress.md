@@ -21,3 +21,5 @@
 - Module gate: provider tests passed, including mocked rate-limit retry.
 - M1: Added browser source preview per segment, a batch render endpoint, duplicate-render rejection through project state, and frontend batch action.
 - Module gate: batch-render API tests and frontend test/build passed.
+- M1: Added Alembic migrations, MIME allowlist validation, and orphan runtime-file cleanup.
+- Module gate: focused cleanup/upload tests and full 20-test backend regression passed.
