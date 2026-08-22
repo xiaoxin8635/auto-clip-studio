@@ -35,7 +35,7 @@ class OpenAICompatibleProvider(AIProvider):
         return ProviderResult.model_validate(
             {
                 "transcript": transcript.model_dump(),
-                "segments": await self._select_segments(transcript.model_dump(), duration_ms),
+                "segments": await self.select_segments(transcript.model_dump(), duration_ms),
             }
         )
 
@@ -82,7 +82,7 @@ class OpenAICompatibleProvider(AIProvider):
         except (httpx.HTTPError, ValueError, KeyError, asyncio.TimeoutError) as exc:
             raise ProviderError(f"Transcription failed: {exc}") from exc
 
-    async def _select_segments(self, transcript: dict, duration_ms: int) -> list[dict]:
+    async def select_segments(self, transcript: dict, duration_ms: int) -> list[dict]:
         prompt = (
             "你是短视频剪辑策划。请从转录中选出 3 到 5 个适合 9:16 短视频的片段。"
             f"视频总长 {duration_ms} 毫秒。只输出 JSON，格式为 "

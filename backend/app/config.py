@@ -14,6 +14,8 @@ class Settings(BaseModel):
     ai_model: str | None = None
     transcribe_model: str | None = None
     caption_suffix: str | None = None
+    qwen_asr_model: str | None = None
+    media_upload_url_template: str | None = None
     max_upload_bytes: int = 500 * 1024 * 1024
     environment: str = "local"
 
@@ -30,5 +32,7 @@ def get_settings() -> Settings:
         ai_model=os.getenv("AUTOCLIP_AI_MODEL"),
         transcribe_model=os.getenv("AUTOCLIP_TRANSCRIBE_MODEL"),
         caption_suffix=os.getenv("AUTOCLIP_CAPTION_SUFFIX"),
+        qwen_asr_model=os.getenv("AUTOCLIP_QWEN_ASR_MODEL"),
+        media_upload_url_template=os.getenv("AUTOCLIP_MEDIA_UPLOAD_URL_TEMPLATE"),
         environment=os.getenv("AUTOCLIP_ENV", "local"),
     )

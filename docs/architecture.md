@@ -35,6 +35,7 @@ failed -> uploaded / awaiting_review / rendering
 
 - `mock`：确定性输出，用于本地体验和测试。
 - `openai-compatible`：通过标准 `/audio/transcriptions` 与 `/chat/completions` 接口访问兼容服务。
+- `qwen-asr-openai-compatible`：DashScope 千问 ASR 负责时间戳转录，OpenAI-compatible LLM 负责选段。该模式要求 `AUTOCLIP_MEDIA_UPLOAD_URL_TEMPLATE` 提供一个可直接 PUT 上传并公开可下载的 URL 模板；生产环境可由 OSS 签名服务生成该模板。
 
 Provider 输出必须先通过 Pydantic 校验，再进入数据库。网络或解析错误会转为项目失败状态，用户可重试。
 

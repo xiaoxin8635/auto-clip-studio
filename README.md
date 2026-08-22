@@ -53,6 +53,19 @@ AUTOCLIP_TRANSCRIBE_MODEL=your-asr-model
 AUTOCLIP_CAPTION_SUFFIX=.srt
 ```
 
+也可以使用千问 ASR + LLM 选段的组合：
+
+```text
+AUTOCLIP_PROVIDER=qwen-asr-openai-compatible
+AUTOCLIP_QWEN_ASR_MODEL=qwen-audio-asr
+AUTOCLIP_MEDIA_UPLOAD_URL_TEMPLATE=https://your-storage.example/{name}?signature=...
+AUTOCLIP_AI_BASE_URL=https://peuyai.ulib.top/v1
+AUTOCLIP_AI_API_KEY=your-key
+AUTOCLIP_AI_MODEL=glm-5.3
+```
+
+千问 ASR 要求音频具有可下载 URL。上传模板必须支持 `PUT`，并把 `{name}` 替换为文件名；生产环境应由 OSS 签名服务生成短期 URL，后端只使用该 URL，不保存 OSS 密钥。
+
 - `AUTOCLIP_AI_MODEL` 用于片段选择。
 - `AUTOCLIP_TRANSCRIBE_MODEL` 用于音频转录；未设置时沿用 `AUTOCLIP_AI_MODEL`。
 - `AUTOCLIP_CAPTION_SUFFIX` 设置后优先读取上传文件旁边的本地字幕，适合评测已带官方字幕的素材。
