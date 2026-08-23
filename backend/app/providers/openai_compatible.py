@@ -6,8 +6,9 @@ import re
 from pathlib import Path
 
 import httpx
+from pydantic import ValidationError, TypeAdapter
 
-from ..schemas import ProviderResult, Transcript
+from ..schemas import ProviderResult, ProviderSegment, Transcript
 from .base import AIProvider, ProviderError
 
 
@@ -29,6 +30,8 @@ class OpenAICompatibleProvider(AIProvider):
         self.caption_suffix = caption_suffix
         self.timeout = timeout
         self.max_attempts = max_attempts
+
+        self._transcript_adapter = TypeAdapter(Transcript)
 
     async def analyze(self, media_path: Path, duration_ms: int) -> ProviderResult:
         transcript = Transcript.model_validate(await self._transcribe(media_path, duration_ms))
@@ -83,11 +86,21 @@ class OpenAICompatibleProvider(AIProvider):
             raise ProviderError(f"Transcription failed: {exc}") from exc
 
     async def select_segments(self, transcript: dict, duration_ms: int) -> list[dict]:
+        if not isinstance(transcript, dict):
+            raise ProviderError("Segment selection requires a transcript object")
+        try:
+            normalized_transcript = self._transcript_adapter.validate_python(transcript).model_dump()
+        except ValidationError as error:
+            raise ProviderError("Transcript failed schema validation") from error
+        cues = normalized_transcript["cues"]
+        if not cues:
+            raise ProviderError("Transcript contains no usable cues")
         prompt = (
             "你是短视频剪辑策划。请从转录中选出 3 到 5 个适合 9:16 短视频的片段。"
             f"视频总长 {duration_ms} 毫秒。只输出 JSON，格式为 "
             '{"segments":[{"title":"...","rationale":"...","start_ms":0,"end_ms":0,"caption_text":"..."}]}。'
-            "片段必须完整、不重叠、边界在视频范围内。"
+            "片段必须完整、不重叠、边界在视频范围内。start_ms 必须取某个 cue 的 start_ms，"
+            "end_ms 必须取某个 cue 的 end_ms，不要发明任意毫秒边界。"
         )
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -108,7 +121,7 @@ class OpenAICompatibleProvider(AIProvider):
                 parsed = extract_json_object(content)
                 if not isinstance(parsed, dict) or not isinstance(parsed.get("segments"), list):
                     raise ProviderError("Segment selection response has no segments list")
-                return normalize_segments(parsed.get("segments", []))
+                return snap_segments_to_cues(normalize_segments(parsed.get("segments", [])), cues, duration_ms)
         except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
             raise ProviderError(f"Segment selection failed: {exc}") from exc
 
@@ -151,6 +164,11 @@ def parse_srt(content: str, duration_ms: int) -> dict:
         text = " ".join(lines[2:]).strip()
         if end <= start or not text:
             continue
+        # Official caption feeds occasionally contain malformed trailing cues.
+        if end > duration_ms:
+            end = duration_ms
+        if end <= start:
+            continue
         cues.append({"start_ms": start, "end_ms": min(end, duration_ms), "text": text})
     if not cues:
         raise ProviderError("Caption file contains no usable cues")
@@ -167,6 +185,59 @@ def normalize_segments(segments: list[dict]) -> list[dict]:
             candidate["rationale"] = "模型未返回选段理由；已按标题、时间和字幕内容校验。"
         normalized.append(candidate)
     return normalized
+
+
+def snap_segments_to_cues(segments: list[dict], cues: list[dict], duration_ms: int) -> list[dict]:
+    """Snap model boundaries to transcript cue boundaries before schema validation."""
+    if duration_ms <= 0:
+        raise ProviderError("Video duration must be positive")
+    if not cues:
+        raise ProviderError("No transcript cue boundaries are available")
+
+    start_candidates: list[int] = []
+    end_candidates: list[int] = []
+    for cue in cues:
+        if not isinstance(cue, dict):
+            raise ProviderError("Transcript cue must be an object")
+        start_ms = cue.get("start_ms")
+        end_ms = cue.get("end_ms")
+        if not isinstance(start_ms, int) or not isinstance(end_ms, int):
+            raise ProviderError("Transcript cue boundaries must be integers")
+        if start_ms < 0 or end_ms <= start_ms or end_ms > duration_ms:
+            raise ProviderError("Transcript cue boundaries are outside the video")
+        start_candidates.append(start_ms)
+        end_candidates.append(end_ms)
+
+    snapped_segments: list[tuple[int, int, dict]] = []
+    for segment in segments:
+        if not isinstance(segment, dict):
+            continue
+        raw_start = segment.get("start_ms")
+        raw_end = segment.get("end_ms")
+        if not isinstance(raw_start, int) or not isinstance(raw_end, int):
+            continue
+        start_ms = min(start_candidates, key=lambda value: (abs(value - raw_start), value))
+        end_ms = min(end_candidates, key=lambda value: (abs(value - raw_end), value))
+        if start_ms < 0 or end_ms <= start_ms or end_ms > duration_ms:
+            continue
+        if any(start_ms < accepted_end and accepted_start < end_ms for accepted_start, accepted_end, _ in snapped_segments):
+            continue
+        snapped_segments.append((start_ms, end_ms, segment))
+
+    snapped_segments.sort(key=lambda item: (item[0], item[1]))
+    if not snapped_segments:
+        raise ProviderError("No model segments remain after transcript boundary snapping")
+
+    result = []
+    for start_ms, end_ms, segment in snapped_segments:
+        candidate = dict(segment)
+        candidate["start_ms"] = start_ms
+        candidate["end_ms"] = end_ms
+        try:
+            result.append(ProviderSegment.model_validate(candidate).model_dump())
+        except ValidationError as error:
+            raise ProviderError("Segment selection output failed schema validation") from error
+    return result
 
 
 def extract_json_object(content: str) -> dict | list | None:

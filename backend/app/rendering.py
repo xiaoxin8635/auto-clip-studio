@@ -110,13 +110,13 @@ def render_segment(source: Path, output: Path, segment: Segment) -> None:
     ]
     try:
         subprocess.run(command, capture_output=True, text=True, timeout=600, check=True)
+        if not output.exists() or output.stat().st_size == 0:
+            raise RenderError("FFmpeg did not produce an output file")
     except subprocess.TimeoutExpired as exc:
         raise RenderError("Render timed out after 600 seconds") from exc
     except subprocess.CalledProcessError as exc:
         detail = (exc.stderr or "").strip().splitlines()[-1:] or ["FFmpeg exited with an error"]
         raise RenderError(detail[0][:300]) from exc
-        if not output.exists() or output.stat().st_size == 0:
-            raise RenderError("FFmpeg did not produce an output file")
     finally:
         caption_file.unlink(missing_ok=True)
 

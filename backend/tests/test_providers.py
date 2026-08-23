@@ -1,6 +1,12 @@
 from app.providers.mock import MockProvider
-from app.providers.openai_compatible import OpenAICompatibleProvider, extract_json_object
-from app.providers.openai_compatible import normalize_segments
+from app.providers.base import ProviderError
+from app.providers.openai_compatible import (
+    OpenAICompatibleProvider,
+    extract_json_object,
+    normalize_segments,
+    parse_srt,
+    snap_segments_to_cues,
+)
 from app.schemas import ProviderResult
 import json
 import pytest
@@ -26,6 +32,100 @@ def test_normalize_segments_defaults_missing_rationale():
     segments = normalize_segments([{"title": "Valid", "start_ms": 1, "end_ms": 2, "rationale": ""}])
 
     assert segments[0]["rationale"]
+
+
+def test_snap_segments_uses_exact_cue_boundaries():
+    cues = [
+        {"start_ms": 1000, "end_ms": 3000, "text": "first"},
+        {"start_ms": 3000, "end_ms": 6000, "text": "second"},
+    ]
+    segment = {"title": "Exact", "rationale": "Exact cue", "start_ms": 1000, "end_ms": 6000}
+
+    snapped = snap_segments_to_cues([segment], cues, 6000)
+
+    assert snapped == [{**segment, "caption_text": ""}]
+
+
+def test_snap_segments_prefers_nearest_cue_boundary():
+    cues = [
+        {"start_ms": 0, "end_ms": 2000, "text": "first"},
+        {"start_ms": 2000, "end_ms": 5000, "text": "second"},
+        {"start_ms": 5000, "end_ms": 9000, "text": "third"},
+    ]
+    segment = {"title": "Middle", "rationale": "Nearest boundaries", "start_ms": 1900, "end_ms": 8200}
+
+    snapped = snap_segments_to_cues([segment], cues, 9000)
+
+    assert snapped[0]["start_ms"] == 2000
+    assert snapped[0]["end_ms"] == 9000
+
+
+def test_snap_segments_rejects_reversed_boundary():
+    cues = [{"start_ms": 0, "end_ms": 2000, "text": "first"}, {"start_ms": 2000, "end_ms": 4000, "text": "second"}]
+    segment = {"title": "Reversed", "rationale": "Snaps backwards", "start_ms": 1900, "end_ms": 100}
+
+    with pytest.raises(ProviderError, match="No model segments remain"):
+        snap_segments_to_cues([segment], cues, 4000)
+
+
+def test_snap_segments_rejects_cue_beyond_duration():
+    cues = [{"start_ms": 0, "end_ms": 2000, "text": "first"}, {"start_ms": 2000, "end_ms": 4500, "text": "second"}]
+    segment = {"title": "Too late", "rationale": "Beyond video", "start_ms": 2000, "end_ms": 4000}
+
+    with pytest.raises(ProviderError, match="outside the video"):
+        snap_segments_to_cues([segment], cues, 4000)
+
+
+def test_snap_segments_drops_overlap_after_snapping():
+    cues = [
+        {"start_ms": 0, "end_ms": 2000, "text": "first"},
+        {"start_ms": 2000, "end_ms": 5000, "text": "second"},
+        {"start_ms": 5000, "end_ms": 8000, "text": "third"},
+    ]
+    segments = [
+        {"title": "Second", "rationale": "Original second", "start_ms": 2100, "end_ms": 5100},
+        {"title": "Later", "rationale": "Overlaps after snap", "start_ms": 2100, "end_ms": 7900},
+    ]
+
+    snapped = snap_segments_to_cues(segments, cues, 8000)
+
+    assert [(item["start_ms"], item["end_ms"]) for item in snapped] == [(2000, 5000)]
+
+
+def test_snap_segments_requires_cues():
+    segment = {"title": "No cues", "rationale": "No boundaries", "start_ms": 0, "end_ms": 1000}
+
+    with pytest.raises(ProviderError, match="No transcript cue boundaries"):
+        snap_segments_to_cues([segment], [], 1000)
+
+
+def test_snap_segments_preserves_schema_validation():
+    cues = [{"start_ms": 0, "end_ms": 1500, "text": "only"}]
+    segments = [
+        {"title": "", "rationale": "Invalid title", "start_ms": 0, "end_ms": 1500},
+    ]
+
+    with pytest.raises(ProviderError, match="schema validation"):
+        snap_segments_to_cues(segments, cues, 1500)
+
+
+def test_parse_srt_discards_malformed_trailing_cue():
+    content = (
+        "1\n00:00:00,000 --> 00:00:01,000\nvalid\n\n"
+        "2\n00:00:02,000 --> 00:00:03,000\nmalformed\n"
+    )
+
+    cues = parse_srt(content, 1500)["cues"]
+
+    assert [cue["start_ms"] for cue in cues] == [0]
+
+
+@respx.mock
+async def test_select_segments_rejects_missing_cues():
+    provider = OpenAICompatibleProvider("https://provider.test/v1", "key", "model", timeout=1)
+
+    with pytest.raises(ProviderError, match="no usable cues"):
+        await provider.select_segments({"language": "en", "cues": []}, 1_000)
 
 
 @respx.mock
