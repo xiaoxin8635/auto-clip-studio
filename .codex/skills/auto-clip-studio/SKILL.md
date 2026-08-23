@@ -13,13 +13,15 @@ Use this skill for any work inside `auto-clip-studio/`. Do not use it for unrela
 
 1. Read `docs/architecture.md`, `docs/api-contract.md`, and `docs/progress.md`.
 2. Read `references/workflow.md` before choosing the next module.
-3. Read `references/review-checklist.md` after completing each API or module.
-4. Read `references/api-contract.md` from the skill only when the contract needs interpretation or change.
-5. Follow `docs/ai-project-process.md` for general engineering standards.
+3. Read `references/production-quality.md` before writing any code, configuration, test, or migration.
+4. Read `references/review-checklist.md` after completing each API or module.
+5. Read `references/api-contract.md` from the skill only when the contract needs interpretation or change.
+6. Follow `docs/ai-project-process.md` for general engineering standards.
 
 ## Hard constraints
 
 - Never skip the test + review + document-sync gate after completing an API or module.
+- Apply `references/production-quality.md` as a mandatory coding and release gate.
 - Keep uploads, renders, transcripts, model caches, and SQLite data under `.local/`.
 - Never commit API keys, user videos, rendered media, or model response caches.
 - Do not add a major dependency unless `docs/architecture.md` records the reason.

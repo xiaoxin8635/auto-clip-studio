@@ -2,6 +2,8 @@
 
 Complete this checklist after every API or module:
 
+- Every item in `references/production-quality.md` relevant to the changed layer was checked.
+
 - The implementation satisfies the current module's acceptance criteria.
 - Input validation covers types, sizes, ranges, file types, and state.
 - Missing resources return stable 404/409 behavior.

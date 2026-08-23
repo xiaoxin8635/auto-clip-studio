@@ -57,3 +57,5 @@
 - Moved caption burn-in to temporary FFmpeg `textfile` input so punctuation and newlines cannot corrupt filter syntax.
 - Enabled SQLite WAL/busy timeout and automatic OSS ASR audio deletion after each transcription.
 - Module gate: 50 backend tests passed and frontend production build passed; reviewed credentials, runtime-file cleanup, state transitions, and upload failure paths.
+
+- Added a mandatory production-quality gate covering business logic, exceptions, security, database, cache, interfaces, concurrency, resource cleanup, logging, environment configuration, coding standards, boundary cases, and release verification. The project skill now requires this gate before every coding change and during every module review.
