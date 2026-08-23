@@ -48,3 +48,12 @@
 - Evaluation results: 10/10 hit at least one annotated segment, 100% transcript usability, 100% render success, 17.38 s mean analysis time, and 8.55 s mean boundary error.
 - Hardened segment-selection normalization so an optional missing model rationale does not reject otherwise valid title/time/caption output.
 - Module gate: full backend regression passed with 44 tests. The remaining quality gap is boundary precision (target 3 s); the next improvement should focus on sentence-boundary snapping and prompt constraints.
+
+## 2026-08-23 Security hardening
+
+- Added optional Bearer-token protection for all application APIs and mandatory independent admin-token protection for maintenance APIs.
+- Replaced concurrent batch render tasks with one sequential batch worker so every segment is rendered before state advances.
+- Hardened uploads with pre-flight state checks, temporary writes, media validation, and atomic replacement.
+- Moved caption burn-in to temporary FFmpeg `textfile` input so punctuation and newlines cannot corrupt filter syntax.
+- Enabled SQLite WAL/busy timeout and automatic OSS ASR audio deletion after each transcription.
+- Module gate: 50 backend tests passed and frontend production build passed; reviewed credentials, runtime-file cleanup, state transitions, and upload failure paths.

@@ -18,6 +18,9 @@ class AudioUrlUploader(Protocol):
     def upload(self, source: Path, destination_name: str) -> str:
         """Upload media and return a URL accessible to the ASR service."""
 
+    def delete(self, destination_name: str) -> None:
+        """Remove the temporary ASR object after processing."""
+
 
 @dataclass(frozen=True)
 class QwenAsrConfig:
@@ -72,6 +75,7 @@ async def transcribe_with_qwen(
             audio_path,
             f"{media_path.stem}.m4a",
         )
+        object_name = f"{media_path.stem}.m4a"
     except (OSError, RuntimeError) as error:
         raise ProviderError(f"Audio upload failed: {error}") from error
 
@@ -107,6 +111,12 @@ async def transcribe_with_qwen(
     except (httpx.HTTPError, ValueError, KeyError, TypeError, asyncio.TimeoutError) as error:
         raise ProviderError(f"Qwen ASR failed: {error}") from error
     finally:
+        if object_name:
+            try:
+                await asyncio.to_thread(config.uploader.delete, object_name)
+            except Exception as error:
+                # Transcription is still usable when temporary cleanup fails.
+                print(f"OSS ASR cleanup failed for {object_name}: {error}", flush=True)
         if own_client:
             await client.aclose()
 

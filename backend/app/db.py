@@ -4,6 +4,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 
 from sqlalchemy import create_engine
+from sqlalchemy import event
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from .config import get_settings
@@ -25,8 +26,9 @@ def get_engine():
         database_url = f"sqlite:///{settings.data_dir / 'autoclip.sqlite3'}"
         _engine = create_engine(
             database_url,
-            connect_args={"check_same_thread": False},
+            connect_args={"check_same_thread": False, "timeout": 30},
         )
+        event.listens_for(_engine, "connect")(_enable_sqlite_wal)
         _session_factory = sessionmaker(bind=_engine, expire_on_commit=False)
     return _engine
 
@@ -36,6 +38,13 @@ def reset_db_cache() -> None:
     global _engine, _session_factory
     _engine = None
     _session_factory = None
+
+
+def _enable_sqlite_wal(dbapi_connection, _record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA journal_mode=WAL")
+    cursor.execute("PRAGMA busy_timeout=30000")
+    cursor.close()
 
 
 def init_db() -> None:

@@ -14,8 +14,13 @@ from app.providers.qwen_asr import (
 
 
 class FakeUploader:
+    deleted: list[str] = []
+
     def upload(self, source: Path, destination_name: str) -> str:
         return "https://storage.test/audio.mp4"
+
+    def delete(self, destination_name: str) -> None:
+        self.deleted.append(destination_name)
 
 
 def fake_extract_audio(source: Path) -> Path:
@@ -67,6 +72,7 @@ async def test_transcribe_with_qwen_polls_and_normalizes_result(tmp_path: Path):
 
     assert running.call_count == 1
     assert succeeded.called
+    assert FakeUploader.deleted == ["video.m4a"]
     assert result == {
         "language": "en",
         "cues": [

@@ -20,6 +20,8 @@ class Settings(BaseModel):
     oss_endpoint: str | None = None
     oss_access_key_id: str | None = None
     oss_access_key_secret: str | None = None
+    api_token: str | None = None
+    admin_token: str | None = None
     max_upload_bytes: int = 500 * 1024 * 1024
     environment: str = "local"
 
@@ -42,5 +44,7 @@ def get_settings() -> Settings:
         oss_endpoint=os.getenv("AUTOCLIP_OSS_ENDPOINT"),
         oss_access_key_id=os.getenv("AUTOCLIP_OSS_ACCESS_KEY_ID"),
         oss_access_key_secret=os.getenv("AUTOCLIP_OSS_ACCESS_KEY_SECRET"),
+        api_token=os.getenv("AUTOCLIP_API_TOKEN"),
+        admin_token=os.getenv("AUTOCLIP_ADMIN_TOKEN"),
         environment=os.getenv("AUTOCLIP_ENV", "local"),
     )

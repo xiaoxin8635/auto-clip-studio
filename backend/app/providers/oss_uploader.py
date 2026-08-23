@@ -41,3 +41,9 @@ class OssSignerUploader:
             self.expires_in_seconds,
             slash_safe=True,
         )
+
+    def delete(self, destination_name: str) -> None:
+        object_key = destination_name.replace("\\", "/").strip("/")
+        if not object_key:
+            raise ValueError("OSS object key cannot be empty")
+        self.bucket_client.delete_object(object_key)

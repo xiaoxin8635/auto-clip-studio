@@ -50,3 +50,20 @@ def test_upload_rejects_wrong_mime_type(client, created_project):
 def test_upload_rejects_second_upload(client, created_project):
     assert upload(client, created_project["id"]).status_code == 200
     assert upload(client, created_project["id"]).status_code == 409
+
+
+def test_upload_conflict_does_not_leave_files(client, created_project, temp_storage):
+    assert upload(client, created_project["id"]).status_code == 200
+    before = list((temp_storage / "uploads").iterdir())
+
+    response = upload(client, created_project["id"])
+
+    assert response.status_code == 409
+    assert list((temp_storage / "uploads").iterdir()) == before
+
+
+def test_invalid_media_failure_removes_temporary_file(client, created_project, temp_storage):
+    response = upload(client, created_project["id"], content=b"not a video")
+
+    assert response.status_code == 400
+    assert not list((temp_storage / "uploads").glob("*.part"))

@@ -76,6 +76,17 @@ AUTOCLIP_AI_MODEL=glm-5.3
 
 密钥只能通过环境变量注入，不能提交到仓库。
 
+## 访问控制
+
+默认本机单用户模式不要求 token。局域网或公网部署时设置：
+
+```text
+AUTOCLIP_API_TOKEN=your-long-random-user-token
+AUTOCLIP_ADMIN_TOKEN=your-long-random-admin-token
+```
+
+普通 API 使用 `Authorization: Bearer $AUTOCLIP_API_TOKEN`。管理接口（例如运行文件清理）必须使用独立的 admin token。
+
 ## 开发流程
 
 本项目的开发顺序、接口契约和 review 门禁定义在 `.codex/skills/auto-clip-studio/`。每次新增或修改接口/模块时，必须完成测试、review、文档同步后再提交。

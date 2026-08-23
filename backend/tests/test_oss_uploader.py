@@ -30,6 +30,9 @@ def test_oss_uploader_builds_bucket_and_signs_download_url(tmp_path, monkeypatch
             captured["url_key"] = key
             return f"https://signed.test/{key}"
 
+        def delete_object(self, key):
+            captured["deleted_key"] = key
+
     monkeypatch.setattr("app.providers.oss_uploader.oss2.Bucket", FakeBucket)
     uploader = OssSignerUploader("bucket", "endpoint", "id", "secret", expires_in_seconds=60)
 
@@ -39,3 +42,5 @@ def test_oss_uploader_builds_bucket_and_signs_download_url(tmp_path, monkeypatch
     assert captured["key"] == "video.mp4"
     assert captured["method"] == "GET"
     assert download_url == "https://signed.test/video.mp4"
+    uploader.delete("video.mp4")
+    assert captured["deleted_key"] == "video.mp4"

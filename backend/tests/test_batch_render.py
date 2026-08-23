@@ -12,4 +12,7 @@ def test_batch_render_queues_all_segments(client, created_project):
     response = client.post(f"/api/projects/{project_id}/render")
     assert response.status_code == 202
     assert response.json()["count"] == 3
-    assert client.get(f"/api/projects/{project_id}").json()["status"] == "completed"
+    detail = client.get(f"/api/projects/{project_id}").json()
+    assert detail["status"] == "completed"
+    assert len(detail["segments"]) == 3
+    assert all(segment["download_url"] for segment in detail["segments"])

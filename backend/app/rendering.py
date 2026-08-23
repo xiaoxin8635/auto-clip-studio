@@ -46,6 +46,33 @@ def run_render(project_id: str, segment_id: str) -> None:
             raise
 
 
+def run_render_batch(project_id: str) -> None:
+    with session_scope() as session:
+        project = session.get(Project, project_id)
+        if project is None or project.status != "rendering":
+            return
+        settings = get_settings()
+        render_dir = settings.data_dir / "renders"
+        render_dir.mkdir(parents=True, exist_ok=True)
+        failures: list[str] = []
+        for segment in project.segments:
+            output = render_dir / f"{project_id}-{segment.id}.mp4"
+            try:
+                render_segment(Path(project.source_path), output, segment)
+                segment.output_path = str(output)
+                segment.status = "rendered"
+            except (RenderError, OSError, subprocess.SubprocessError) as exc:
+                output.unlink(missing_ok=True)
+                segment.output_path = None
+                segment.status = "failed"
+                failures.append(f"{segment.title}: {exc}")
+        if failures:
+            advance(project, "awaiting_review")
+            fail(project, f"Render failed for {len(failures)} segment(s): " + "; ".join(failures)[:768])
+            return
+        advance(project, "completed")
+
+
 def render_segment(source: Path, output: Path, segment: Segment) -> None:
     if not source.exists():
         raise RenderError("Source video is missing")
@@ -53,7 +80,8 @@ def render_segment(source: Path, output: Path, segment: Segment) -> None:
     output_resolved = output.resolve()
     if get_settings().data_dir.resolve() not in output_resolved.parents:
         raise RenderError("Render output is outside the runtime directory")
-    caption = escape_drawtext(segment.caption_text or segment.title)
+    caption_file = output.with_suffix(".caption.txt")
+    caption_file.write_text((segment.caption_text or segment.title) + "\n", encoding="utf-8")
     command = [
         ffmpeg_path(),
         "-y",
@@ -68,7 +96,7 @@ def render_segment(source: Path, output: Path, segment: Segment) -> None:
             "crop='min(iw,ih*9/16)':'min(ih,iw*16/9)',"
             "scale=1080:1920:force_original_aspect_ratio=increase,"
             "crop=1080:1920,"
-            f"drawtext=text='{caption}':fontcolor=white:fontsize=64:box=1:boxcolor=black@0.55:boxborderw=18:x=(w-text_w)/2:y=h*0.78"
+            f"drawtext=textfile='{escape_drawtext(str(caption_file.resolve()))}':fontcolor=white:fontsize=64:box=1:boxcolor=black@0.55:boxborderw=18:x=(w-text_w)/2:y=h*0.78"
         ),
         "-c:v",
         "libx264",
@@ -87,8 +115,10 @@ def render_segment(source: Path, output: Path, segment: Segment) -> None:
     except subprocess.CalledProcessError as exc:
         detail = (exc.stderr or "").strip().splitlines()[-1:] or ["FFmpeg exited with an error"]
         raise RenderError(detail[0][:300]) from exc
-    if not output.exists() or output.stat().st_size == 0:
-        raise RenderError("FFmpeg did not produce an output file")
+        if not output.exists() or output.stat().st_size == 0:
+            raise RenderError("FFmpeg did not produce an output file")
+    finally:
+        caption_file.unlink(missing_ok=True)
 
 
 def format_seconds(milliseconds: int) -> str:
