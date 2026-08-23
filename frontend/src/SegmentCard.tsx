@@ -47,6 +47,19 @@ export function SegmentCard({ project, segment, onChanged }: Props) {
     }
   }
 
+  async function downloadSegment() {
+    if (!segment.download_url) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await api.download(segment.download_url);
+    } catch (exc) {
+      setError(exc instanceof Error ? exc.message : "下载失败");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <article className="segment-card">
       <header>
@@ -94,7 +107,11 @@ export function SegmentCard({ project, segment, onChanged }: Props) {
           <button className="primary" onClick={render} disabled={busy || project.status !== "awaiting_review"}>
             渲染
           </button>
-          {segment.download_url && <a href={segment.download_url}>下载</a>}
+          {segment.download_url && (
+            <button className="secondary" onClick={() => void downloadSegment()} disabled={busy}>
+              下载
+            </button>
+          )}
         </div>
       )}
       {error && <p className="error">{error}</p>}

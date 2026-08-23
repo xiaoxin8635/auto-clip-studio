@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api } from "./api";
+import { api, ApiError, getStoredApiToken, removeStoredApiToken, setStoredApiToken } from "./api";
 import { SegmentCard } from "./SegmentCard";
 import type { Project, ProjectSummary } from "./types";
 import { isBusy, label } from "./status";
@@ -11,6 +11,10 @@ export function App() {
   const [recentProjects, setRecentProjects] = useState<ProjectSummary[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [tokenEditorOpen, setTokenEditorOpen] = useState(false);
+  const [tokenValue, setTokenValue] = useState("");
+  const [tokenConfigured, setTokenConfigured] = useState(() => getStoredApiToken() !== null);
   const [busy, setBusy] = useState(false);
   const timer = useRef<number | undefined>(undefined);
 
@@ -18,7 +22,7 @@ export function App() {
     try {
       setProject(await api.project(projectId));
     } catch (exc) {
-      setError(exc instanceof Error ? exc.message : "无法读取项目");
+      setApiFailure(exc, "无法读取项目");
     }
   }, []);
 
@@ -26,10 +30,20 @@ export function App() {
     try {
       const payload = await api.projects();
       setRecentProjects(payload.items);
-    } catch {
+    } catch (exc) {
       setRecentProjects([]);
+      if (exc instanceof ApiError && exc.unauthorized) setApiFailure(exc, "无法读取项目");
     }
   }, []);
+
+  function setApiFailure(value: unknown, fallback: string) {
+    const message = value instanceof Error ? value.message : fallback;
+    if (value instanceof ApiError && value.unauthorized) {
+      setAuthError(message);
+      setTokenEditorOpen(true);
+    }
+    setError(message);
+  }
 
   useEffect(() => {
     void loadRecentProjects();
@@ -53,7 +67,7 @@ export function App() {
       await refresh(uploaded.id);
       void loadRecentProjects();
     } catch (exc) {
-      setError(exc instanceof Error ? exc.message : "启动失败");
+      setApiFailure(exc, "启动失败");
     } finally {
       setBusy(false);
     }
@@ -66,7 +80,7 @@ export function App() {
       await api.analyze(project.id);
       await refresh(project.id);
     } catch (exc) {
-      setError(exc instanceof Error ? exc.message : "重试失败");
+      setApiFailure(exc, "重试失败");
     } finally {
       setBusy(false);
     }
@@ -79,10 +93,32 @@ export function App() {
       await api.renderAll(project.id);
       await refresh(project.id);
     } catch (exc) {
-      setError(exc instanceof Error ? exc.message : "批量渲染失败");
+      setApiFailure(exc, "批量渲染失败");
     } finally {
       setBusy(false);
     }
+  }
+
+  function saveToken() {
+    try {
+      setStoredApiToken(tokenValue);
+      setTokenConfigured(getStoredApiToken() !== null);
+      setTokenValue("");
+      setTokenEditorOpen(false);
+      setAuthError(null);
+      setError(null);
+      void loadRecentProjects();
+    } catch (exc) {
+      setAuthError(exc instanceof Error ? exc.message : "保存 token 失败");
+    }
+  }
+
+  function clearToken() {
+    removeStoredApiToken();
+    setTokenConfigured(false);
+    setTokenValue("");
+    setAuthError(null);
+    setRecentProjects([]);
   }
 
   return (
@@ -92,8 +128,40 @@ export function App() {
           <strong>AutoClip Studio</strong>
           <span>自动剪辑工作台</span>
         </div>
-        {project && <span className={`status ${project.status}`}>{label(project.status)}</span>}
+        <div className="topbar-actions">
+          {project && <span className={`status ${project.status}`}>{label(project.status)}</span>}
+          <button className="secondary" onClick={() => setTokenEditorOpen((value) => !value)}>
+            {tokenConfigured ? "更换 Token" : "设置 Token"}
+          </button>
+        </div>
       </header>
+
+      {(tokenEditorOpen || authError) && (
+        <section className="token-panel">
+          <h2>访问 Token</h2>
+          {authError && <p className="error">{authError}</p>}
+          <div className="token-form">
+            <input
+              type="password"
+              value={tokenValue}
+              placeholder="输入后端 AUTOCLIP_API_TOKEN"
+              onChange={(event) => setTokenValue(event.target.value)}
+              autoComplete="off"
+            />
+            <button className="primary" onClick={saveToken} disabled={!tokenValue.trim()}>
+              保存
+            </button>
+            {tokenConfigured && (
+              <button className="secondary" onClick={clearToken}>
+                清除
+              </button>
+            )}
+            <button className="secondary" onClick={() => setTokenEditorOpen(false)} disabled={!tokenConfigured}>
+              关闭
+            </button>
+          </div>
+        </section>
+      )}
 
       <section className="recent-projects">
         <h2>最近项目</h2>

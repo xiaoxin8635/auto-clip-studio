@@ -70,3 +70,11 @@
 - Module gate: full backend regression passed with 60 tests and the 10-video real-provider evaluation completed.
 
 - Added a manual testing guide covering offline mock setup, real ASR/selector setup, UI acceptance steps, failure checks, token protection, and the expected terminal/browser addresses. This makes local regression and handoff testing repeatable without reading implementation code.
+
+## 2026-08-23 Frontend API token support
+
+- Added a workbench token panel that stores only the user API token in browser `localStorage` under `autoclip_api_token`, with modify and clear actions.
+- Centralized frontend API requests through one fetch client that attaches Bearer authorization, converts network failures and malformed responses into readable errors, and opens the token panel on 401.
+- Updated rendered-segment download to use the authorized fetch client and browser blob download.
+- Documented the token-protected source-preview limitation: inline `<video>` cannot send a custom Authorization header, so a scoped short-lived media URL remains the next media-delivery improvement.
+- Module gate: frontend tests and production build passed (11 tests), full backend regression passed (61 tests), and both unauthenticated local mode and token-protected mode were manually verified.

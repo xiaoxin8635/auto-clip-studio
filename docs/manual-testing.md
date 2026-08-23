@@ -130,4 +130,14 @@ $env:AUTOCLIP_API_TOKEN="<long-random-user-token>"
 $env:AUTOCLIP_ADMIN_TOKEN="<different-long-random-admin-token>"
 ```
 
-Confirm unauthorized requests fail and authorized requests work. Admin cleanup must only accept the admin token, never the user token.
+1. Start the frontend as usual.
+2. Before setting a token, confirm the app shows a clear authentication error and the token input panel.
+3. Click `设置 Token`, enter the exact `AUTOCLIP_API_TOKEN`, and save.
+4. Confirm recent projects load and the normal workflow continues.
+5. Click `更换 Token`, enter an invalid value, save, then refresh; the app should show 401 again.
+6. Click `更换 Token`, then `清除`; the app must stop sending the stored token.
+7. Render a segment and use the card download button; downloads use the stored Bearer token.
+
+Token is stored only in browser `localStorage` under `autoclip_api_token`. Admin cleanup still must only accept the admin token, never the user token.
+
+Known limitation: in token-protected mode, the inline source `<video>` preview cannot attach a custom Authorization header. The next media-delivery module should add a short-lived, scoped source URL. Until then, use the downloaded output for review when token protection is enabled; localhost mock mode without token protection keeps full preview functionality.

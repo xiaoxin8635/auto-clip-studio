@@ -25,6 +25,12 @@ body {
   margin-bottom: 20px;
 }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .topbar strong {
   margin-right: 10px;
   font-size: 20px;
@@ -113,10 +119,33 @@ a {
 }
 
 button.primary,
-a.primary {
+button.primary {
   background: #1769aa;
   border-color: #1769aa;
   color: white;
+}
+
+button.secondary {
+  background: white;
+  border-color: #94a3b8;
+  color: #334155;
+}
+
+.token-panel {
+  border-color: #b6c6d6;
+}
+
+.token-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.token-form input {
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  padding: 8px;
 }
 
 button:disabled {
@@ -217,5 +246,9 @@ button:disabled {
 
   .timeline {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .token-form {
+    grid-template-columns: 1fr;
   }
 }
