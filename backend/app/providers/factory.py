@@ -18,7 +18,6 @@ def create_provider(settings: Settings) -> AIProvider:
                 "AUTOCLIP_AI_BASE_URL": settings.ai_base_url,
                 "AUTOCLIP_AI_API_KEY": settings.ai_api_key,
                 "AUTOCLIP_AI_MODEL": settings.ai_model,
-                "AUTOCLIP_ASR_API_KEY": settings.asr_api_key,
             }.items()
             if not value
         ]

@@ -213,8 +213,9 @@ def probe_duration(path: Path) -> int:
         raise PreparationError("FFmpeg is unavailable for duration probing") from exc
     import subprocess
 
-    completed = subprocess.run(command, capture_output=True, text=True, timeout=30, check=False)
-    match = re.search(r"Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)", completed.stderr)
+    completed = subprocess.run(command, capture_output=True, timeout=30, check=False)
+    ffmpeg_output = (completed.stderr or b"").decode("utf-8", errors="replace")
+    match = re.search(r"Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)", ffmpeg_output)
     if not match:
         raise PreparationError("Could not read downloaded media duration")
     hours, minutes, seconds = match.groups()

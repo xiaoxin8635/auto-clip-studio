@@ -4,6 +4,7 @@ import pytest
 from app.config import Settings
 from app.providers.base import ProviderError
 from app.providers.factory import create_provider
+from app.providers.openai_compatible import OpenAICompatibleProvider
 from app.providers.qwen_asr import QwenAsrSelectorProvider
 
 
@@ -31,3 +32,16 @@ def test_factory_creates_qwen_composite_provider(tmp_path: Path):
     provider = create_provider(settings)
 
     assert isinstance(provider, QwenAsrSelectorProvider)
+
+
+def test_factory_creates_openai_compatible_without_asr_key():
+    provider = create_provider(
+        Settings(
+            provider="openai-compatible",
+            ai_base_url="https://api.test/v1",
+            ai_api_key="key",
+            ai_model="model",
+        )
+    )
+
+    assert isinstance(provider, OpenAICompatibleProvider)

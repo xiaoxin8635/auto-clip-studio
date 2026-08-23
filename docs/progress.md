@@ -35,3 +35,12 @@
 - Added the production ASR path: FFmpeg extracts mono 16 kHz audio, OSS uploads it with SDK signing, DashScope runs timestamped transcription, and an OpenAI-compatible LLM selects segments. ASR now uses `AUTOCLIP_ASR_API_KEY`, separate from the selector key.
 - Real-service probe verified `paraformer-v2` works through the native DashScope async API and returns sentence timestamps; obsolete `qwen-audio-asr` configuration was removed from documentation.
 - Module gate: focused Qwen ASR/OSS/factory tests passed (9 tests), then full backend regression passed with 44 tests. Review covered secrets isolation, upload boundary normalization, recoverable provider errors, and configuration documentation.
+
+## 2026-08-23
+
+- Verified the caption-backed GLM-ulib flow on two real NASA videos and rendered a selected segment from each into a 9:16 MP4.
+- Prepared ten official-caption NASA evaluation videos (1-6 minutes each) with unified annotation drafts and sidecar SRT files under `.local/evaluation-final`.
+- Fixed OpenAI-compatible factory validation so caption-backed evaluation no longer requires DashScope credentials.
+- Fixed media duration probing on Windows when FFmpeg emits non-GBK diagnostic bytes.
+- Real DashScope ASR was attempted with the previously supplied key; the service rejected it as invalid, so ASR evaluation remains blocked until a current DashScope API key is provided.
+- Module gate: full backend regression passed with 43 tests; review confirmed runtime media and credentials remain outside git.
