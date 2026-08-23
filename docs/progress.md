@@ -68,3 +68,5 @@
 - Re-ran all 10 caption-backed evaluation videos with GLM selection and boundary snapping: 10/10 hit, 100% transcript usability, 100% render success, 10.66 s mean analysis, and 7.62 s mean boundary error.
 - Boundary error did not reach the 3 s target. The remaining gap is segment sentence-range choice versus official-caption annotation drafts; next optimization should align prompt semantics/ideal target definitions or add human-preferred boundary training data. Evaluation data was not altered.
 - Module gate: full backend regression passed with 60 tests and the 10-video real-provider evaluation completed.
+
+- Added a manual testing guide covering offline mock setup, real ASR/selector setup, UI acceptance steps, failure checks, token protection, and the expected terminal/browser addresses. This makes local regression and handoff testing repeatable without reading implementation code.
