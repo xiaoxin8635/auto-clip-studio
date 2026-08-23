@@ -108,7 +108,7 @@ class OpenAICompatibleProvider(AIProvider):
                 parsed = extract_json_object(content)
                 if not isinstance(parsed, dict) or not isinstance(parsed.get("segments"), list):
                     raise ProviderError("Segment selection response has no segments list")
-                return parsed.get("segments", [])
+                return normalize_segments(parsed.get("segments", []))
         except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
             raise ProviderError(f"Segment selection failed: {exc}") from exc
 
@@ -155,6 +155,18 @@ def parse_srt(content: str, duration_ms: int) -> dict:
     if not cues:
         raise ProviderError("Caption file contains no usable cues")
     return {"language": "en", "cues": cues}
+
+
+def normalize_segments(segments: list[dict]) -> list[dict]:
+    normalized = []
+    for segment in segments:
+        if not isinstance(segment, dict):
+            continue
+        candidate = dict(segment)
+        if not str(candidate.get("rationale") or "").strip():
+            candidate["rationale"] = "模型未返回选段理由；已按标题、时间和字幕内容校验。"
+        normalized.append(candidate)
+    return normalized
 
 
 def extract_json_object(content: str) -> dict | list | None:

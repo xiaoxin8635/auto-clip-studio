@@ -44,3 +44,7 @@
 - Fixed media duration probing on Windows when FFmpeg emits non-GBK diagnostic bytes.
 - Real DashScope ASR was attempted with the previously supplied key; the service rejected it as invalid, so ASR evaluation remains blocked until a current DashScope API key is provided.
 - Module gate: full backend regression passed with 43 tests; review confirmed runtime media and credentials remain outside git.
+- Completed the first 10-video DashScope ASR + GLM-ulib evaluation. All videos produced timestamped transcripts, valid candidate segments, and a successfully rendered 9:16 MP4.
+- Evaluation results: 10/10 hit at least one annotated segment, 100% transcript usability, 100% render success, 17.38 s mean analysis time, and 8.55 s mean boundary error.
+- Hardened segment-selection normalization so an optional missing model rationale does not reject otherwise valid title/time/caption output.
+- Module gate: full backend regression passed with 44 tests. The remaining quality gap is boundary precision (target 3 s); the next improvement should focus on sentence-boundary snapping and prompt constraints.

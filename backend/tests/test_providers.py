@@ -1,5 +1,6 @@
 from app.providers.mock import MockProvider
 from app.providers.openai_compatible import OpenAICompatibleProvider, extract_json_object
+from app.providers.openai_compatible import normalize_segments
 from app.schemas import ProviderResult
 import json
 import pytest
@@ -19,6 +20,12 @@ def test_mock_provider_result_is_valid_and_bounded(tmp_path):
 def test_extract_json_object_handles_wrapped_output():
     assert extract_json_object('```json\n{"segments": []}\n```') == {"segments": []}
     assert extract_json_object("not json") is None
+
+
+def test_normalize_segments_defaults_missing_rationale():
+    segments = normalize_segments([{"title": "Valid", "start_ms": 1, "end_ms": 2, "rationale": ""}])
+
+    assert segments[0]["rationale"]
 
 
 @respx.mock
