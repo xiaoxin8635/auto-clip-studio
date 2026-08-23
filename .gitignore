@@ -60,7 +60,6 @@ service-account*.json
 *.mpg
 *.mpeg
 *.mts
-*.ts
 *.srt
 *.vtt
 *.ass
